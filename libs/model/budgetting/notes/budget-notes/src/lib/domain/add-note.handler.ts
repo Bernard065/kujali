@@ -1,25 +1,10 @@
 import { FunctionHandler, FunctionContext } from '@ngfi/functions';
 import { HandlerTools } from '@iote/cqrs'; 
 import { AddNoteToBudgetCommand } from './add-note.command';
-
-export interface ICommandHandler<TCommand> {
-  execute(command: TCommand): Promise<void>;
-}
-
-export interface AddNoteToBudgetResult {
-  success: boolean;
-  id?: string;
-}
-
-export interface BudgetNotePayload {
-  budgetId: string;
-  content: string;
-  createdAt: Date;
-}
-
-export interface BudgetNotesRepository {
-  addNote(note: BudgetNotePayload): Promise<void>;
-}
+import { 
+  AddNoteToBudgetResult, 
+  BudgetNotesRepository 
+} from './add-note.interface';
 
 export class AddNoteToBudgetHandler extends FunctionHandler<AddNoteToBudgetCommand, AddNoteToBudgetResult> {
   
@@ -29,7 +14,7 @@ export class AddNoteToBudgetHandler extends FunctionHandler<AddNoteToBudgetComma
     tools: HandlerTools 
   ): Promise<AddNoteToBudgetResult> {
     
-    if (!command.content || command.content.trim().length === 0) {
+    if (!command.content?.trim()) {
       throw new Error('Validation Error: Note content cannot be empty.');
     }
 
@@ -37,12 +22,13 @@ export class AddNoteToBudgetHandler extends FunctionHandler<AddNoteToBudgetComma
       throw new Error('Validation Error: Budget ID is required.');
     }
 
-    const repository = tools.getRepository('budget-notes') as unknown as BudgetNotesRepository;
+    const repository = tools.getRepository('budget-notes') as BudgetNotesRepository;
     
     await repository.addNote({
       budgetId: command.budgetId,
       content: command.content,
-      createdAt: new Date()
+      createdAt: new Date(),
+      authorId: command.authorId 
     });
 
     return { success: true };
